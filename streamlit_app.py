@@ -44,7 +44,7 @@ def calculate_column_size(s1, s2, live_load):
     column_size = max(column_size, 500)
 
     # Round up to the nearest 50 mm
-    column_size = math.ceil(column_size / 50) * 50
+    column_size = (math.ceil(column_size / 50) * 50)/1000
 
     return column_size
 
@@ -101,31 +101,31 @@ def calculate_beam_size_1way(s1, s2, live_load):
 
 
 # Function to create a grid plot based on user inputs
-def create_grid_plot(length, width, scale):
+def create_grid_plot(length, width, s1, column_size, s2):
     fig, ax = plt.subplots(figsize=(8, 6))
 
     # Draw boundary
     ax.plot([0, length, length, 0, 0], [0, 0, width, width, 0], color='black', linewidth=2)
 
     # Draw grid lines
-    for x in np.arange(0, length + scale, scale):
-        ax.axvline(x, color='gray', linestyle='--', linewidth= 2, alpha=0.7)
-    for y in np.arange(0, width + scale, scale):
-        ax.axhline(y, color='gray', linestyle='--', linewidth= 0.5, alpha=0.7)
+    for x in np.arange(0, length + s1, s1):
+        ax.axvline(x, color='gray', linestyle='--', linewidth= 0.3, alpha=0.7)
+    for y in np.arange(0, width + s2, s2):
+        ax.axhline(y, color='gray', linestyle='--', linewidth= 0.3, alpha=0.7)
     
      # Set primary axis labels (distances) in between grid lines
-    xticks = np.arange(scale / 2, length, scale)  # Midpoints for X-axis
-    yticks = np.arange(scale / 2, width, scale)  # Midpoints for Y-axis
+    xticks = np.arange(s1 / 2, length, s1)  # Midpoints for X-axis
+    yticks = np.arange(s2 / 2, width, s2)  # Midpoints for Y-axis
     ax.set_xticks(xticks)
-    ax.set_xticklabels([f"{scale*10}" for _ in xticks])  # Distance labels
+    ax.set_xticklabels([f"{s1*1000}" for _ in xticks], rotation=90, fontsize=8)  # Distance labels
     ax.set_yticks(yticks)
-    ax.set_yticklabels([f"{scale*1000}" for _ in yticks])  # Distance labels
+    ax.set_yticklabels([f"{s2*1000}" for _ in yticks], fontsize=8)  # Distance labels
     ax.yaxis.tick_right()
 
 
     # Add secondary axis labels (ABCDE and 12345)
-    secondary_xticks = np.arange(0, length, scale)  # Original gridline positions
-    secondary_yticks = np.arange(0, width, scale)  # Original gridline positions
+    secondary_xticks = np.arange(0, length, s1)  # Original gridline positions
+    secondary_yticks = np.arange(0, width, s2)  # Original gridline positions
     secondary_horizontal_labels = list("ABCDEFGHIJKLMNOPQRSTUVWXYZ")[:len(secondary_xticks)]
     secondary_vertical_labels = list(range(1, len(secondary_yticks) + 1))
 
@@ -137,7 +137,7 @@ def create_grid_plot(length, width, scale):
             label,
             ha="center",
             va="center",
-            fontsize=9,
+            fontsize=8,
             color="black"
         )
 
@@ -149,7 +149,7 @@ def create_grid_plot(length, width, scale):
             label,
             ha="center",
             va="center",
-            fontsize=9,
+            fontsize=8,
             color="black"
         )
 
@@ -162,7 +162,78 @@ def create_grid_plot(length, width, scale):
     ax.set_ylim(0, width)
     ax.set_aspect('equal')
     ax.legend()
+    
+
+    # Plot an array of squares with side length "column_size" for the entire "length" with "scale" between each square
+    for x in np.arange(s1, length, s1):
+        for y in np.arange(s2, width, s2):
+            ax.plot([
+                x - column_size/2, x + column_size/2, x + column_size/2, x - column_size/2, x - column_size/2
+            ], [
+                y - column_size/2, y - column_size/2, y + column_size/2, y + column_size/2, y - column_size/2
+            ], color='black', linewidth=0.3)
+            
+    # Call secondary element plot function
+    plot_staircase(ax, s1, s2, column_size)
+    
     return fig
+
+def plot_staircase(ax, s1, s2, column_size):
+    """
+    Plot a staircase layout within the grid (plan view).
+    """
+    # Staircase parameters (in meters)
+    floor_to_floor_height = 6.0  # m
+    riser_height = 0.15  # m
+    tread_depth = 0.3  # m
+    landing_length = 2  # m
+    stair_width = 1.2  # m
+
+    # Calculate number of risers and treads
+    num_risers = int(floor_to_floor_height / riser_height)
+    num_treads_per_flight = (num_risers // 2) - 1
+
+    # First flight of stairs
+    for i in range(num_treads_per_flight):
+        x_start = i * tread_depth + s1 + 2 + column_size/2
+        x_end = x_start + tread_depth
+        y_start = s2 - column_size/2 - stair_width -0.1
+        y_end = y_start + stair_width
+        ax.plot([x_start, x_end], [y_start, y_start], color='black', linewidth=0.1)
+        ax.plot([x_start, x_end], [y_end, y_end], color='black', linewidth=0.1)
+        ax.plot([x_start, x_start], [y_start, y_end], color='black', linewidth=0.1)
+
+    # Second flight of stairs
+    for i in range(num_treads_per_flight):
+        x_start = i * tread_depth + s1 + 2 + column_size/2
+        x_end = x_start + tread_depth
+        y_start = s2 - column_size/2 - stair_width - stair_width - 0.3
+        y_end = y_start + stair_width
+        ax.plot([x_start, x_end], [y_start, y_start], color='black', linewidth=0.1)
+        ax.plot([x_start, x_end], [y_end, y_end], color='black', linewidth=0.1)
+        ax.plot([x_start, x_start], [y_start, y_end], color='black', linewidth=0.1)
+
+    # Intermediate landing
+    landing_start = s1 + column_size/2
+    landing_end = landing_start + landing_length
+    y_start = s2 - column_size/2 - stair_width - stair_width - 0.3
+    y_end = y_start + stair_width + stair_width - 0.1
+    ax.plot([landing_start, landing_end], [y_start, y_start], color='black', linewidth=0.1)
+    ax.plot([landing_start, landing_end], [y_end, y_end], color='black', linewidth=0.1)
+    ax.plot([landing_start, landing_start], [y_start, y_end], color='black', linewidth=0.1)
+    ax.plot([landing_end, landing_end], [y_start, y_end], color='black', linewidth=0.1)
+
+    # 2nd Intermediate landing
+    landing_start = s1 + column_size/2 + num_treads_per_flight*tread_depth + landing_length
+    landing_end = landing_start + landing_length
+    y_start = s2 - column_size/2 - stair_width - stair_width - 0.3
+    y_end = y_start + stair_width + stair_width - 0.1
+    ax.plot([landing_start, landing_end], [y_start, y_start], color='black', linewidth=0.1)
+    ax.plot([landing_start, landing_end], [y_end, y_end], color='black', linewidth=0.1)
+    ax.plot([landing_start, landing_start], [y_start, y_end], color='black', linewidth=0.1)
+    ax.plot([landing_end, landing_end], [y_start, y_end], color='black', linewidth=0.1)
+
+
 
 # Function to save plot to PDF and return as BytesIO
 def save_plot_to_pdf(fig):
@@ -175,13 +246,19 @@ def save_plot_to_pdf(fig):
 st.title("Construction Layout Inputs")
 
 # User inputs for boundaries and grid scale
-length = st.number_input("Enter the building length (meters):", min_value=1, value=60)
-width = st.number_input("Enter the building width (meters):", min_value=1, value=60)
-scale = st.number_input("Enter minimum column spacing (spacing in meters):", min_value=1, value=5)
+
+s1 = st.number_input("Enter Beam Span (Required Column to Column clear distance) (m):", min_value=0, max_value=30, step=1, value=5)
+s2 = st.number_input("Enter Beam Span S2 (will be adjusted based on chosen structure design) (m):", min_value=0, max_value=30, step=1, value=5)
+live_load = st.number_input("Enter Live Load (kN/m²):", min_value=0.0, max_value=40.0, step=0.1, value=10.0)
+lengthinput = st.number_input("Enter the building length (meters):", min_value=1, value=16)
+widthinput = st.number_input("Enter the building width (meters):", min_value=1, value=16)
+length = math.ceil((lengthinput + (2 * s1)) / s1) * s1
+width = math.ceil((widthinput + (2 * s2)) / s2) * s2
 
 # Generate and display the grid plot
 if st.button("Generate Grid"):
-    fig = create_grid_plot(length+2, width+2, scale)
+    column_size = calculate_column_size(s1, s2, live_load)
+    fig = create_grid_plot(length+(2*s1), width+(2*s2), s1, column_size, s2)
     st.pyplot(fig)
 
     # Allow user to download the grid plot as a PDF
@@ -189,18 +266,9 @@ if st.button("Generate Grid"):
     st.download_button(
         label="Download Grid as PDF",
         data=pdf_file,
-        file_name=f"grid_{length}x{width}_scale{scale}.pdf",
+        file_name=f"grid_{length}x{width}_scale.pdf",
         mime="application/pdf"
     )
-    
-# Streamlit app for user interaction
-st.title("Size Calculator")
-
-# User inputs
-s1 = st.number_input("Enter Beam Span S1 (m):", min_value=0.0, max_value=30.0, step=0.1)
-s2 = st.number_input("Enter Beam Span S2 (m):", min_value=0.0, max_value=30.0, step=0.1)
-live_load = st.number_input("Enter Live Load (kN/m²):", min_value=0.0, max_value=40.0, step=0.1)
-
 
 if st.button("Calculate Size"):
     # Calculate column size
