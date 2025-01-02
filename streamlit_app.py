@@ -1,7 +1,11 @@
 import streamlit as st
 import matplotlib.pyplot as plt
+import matplotlib.patches as mpatches
+import matplotlib.transforms as transforms
 import numpy as np
 import math
+import shapely
+from shapely.geometry import Polygon
 from io import BytesIO  # For handling the PDF export
 
 # Set the browser tab title and other configurations
@@ -48,7 +52,7 @@ def calculate_column_size(s1, s2, live_load):
 
     return column_size
 
-def calculate_beam_size_1way(s1, s2, live_load):
+def calculate_beam_size_1way(s1, s2, live_load, column_size):
     """
     Calculate the required beam size for a 1-way slab with S1 as the loaded beam.
     :param s1: Span of the beam in meters.
@@ -61,7 +65,7 @@ def calculate_beam_size_1way(s1, s2, live_load):
     gamma_c = 1.0  # Partial safety factor for concrete
     f_cd = 40 / gamma_c  # Design compressive strength of concrete (C40) in MPa
     dead_load = 7.0  # Dead load in kN/m²
-    b_to_d_ratio = 1.0  # Beam Width-to-Depth Ratio
+    b_to_d_ratio = 0.8  # Beam Width-to-Depth Ratio
     reinforcement_ratio = 0.04  # Reinforcement ratio
     f_y = 500  # Yield strength of steel in MPa
     k_value = 0.167  # Assumed constant from design tables
@@ -90,18 +94,27 @@ def calculate_beam_size_1way(s1, s2, live_load):
     correction_factor = ml_correction_factor(s1, s2, live_load)
 
     # Adjusted calculation with heuristic-based correction factor
-    d_s1 = ((M_s1) / (0.85 * f_cd * b_to_d_ratio * k_value))**0.5 * correction_factor
-    b_s1 = b_to_d_ratio * d_s1  # Width in meters
+    d_s2 = ((M_s1) / (0.85 * f_cd * b_to_d_ratio * k_value))**0.5 * correction_factor
+    b_s2 = b_to_d_ratio * d_s2  # Width in meters
 
     # Convert depth and width to mm and round to the nearest 100 mm
+    d_s2_mm = round(d_s2 * 1000 / 100) * 100  # Depth in mm
+    b_s2_mm = round(b_s2 * 1000 / 100) * 100  # Width in mm
+    b_s2_mm = min(b_s2_mm, column_size*1000)
+    b_s2_mm = round(b_s2_mm, 0)
+
+    return b_s2_mm, d_s2_mm
+
+def calculate_unloaded_beam(s1, column_size):
+    b_s1 = column_size
+    d_s1 = s1 /15
     d_s1_mm = round(d_s1 * 1000 / 100) * 100  # Depth in mm
     b_s1_mm = round(b_s1 * 1000 / 100) * 100  # Width in mm
-
+    d_s1_mm = min(d_s1_mm,b_s1_mm)
     return b_s1_mm, d_s1_mm
 
-
 # Function to create a grid plot based on user inputs
-def create_grid_plot(length, width, s1, column_size, s2):
+def create_grid_plot(length, width, s1, column_size, s2, structure_type, b_s2_mm, d_s2_mm, b_s1_mm, d_s1_mm):
     fig, ax = plt.subplots(figsize=(8, 6))
 
     # Draw boundary
@@ -124,8 +137,8 @@ def create_grid_plot(length, width, s1, column_size, s2):
 
 
     # Add secondary axis labels (ABCDE and 12345)
-    secondary_xticks = np.arange(0, length, s1)  # Original gridline positions
-    secondary_yticks = np.arange(0, width, s2)  # Original gridline positions
+    secondary_xticks = np.arange(0, length + s1, s1)  # Original gridline positions
+    secondary_yticks = np.arange(0, width + s2, s2)  # Original gridline positions
     secondary_horizontal_labels = list("ABCDEFGHIJKLMNOPQRSTUVWXYZ")[:len(secondary_xticks)]
     secondary_vertical_labels = list(range(1, len(secondary_yticks) + 1))
 
@@ -161,24 +174,71 @@ def create_grid_plot(length, width, s1, column_size, s2):
     ax.set_xlim(0, length)
     ax.set_ylim(0, width)
     ax.set_aspect('equal')
-    ax.legend()
     
 
-    # Plot an array of squares with side length "column_size" for the entire "length" with "scale" between each square
+    # Plot Columns
     for x in np.arange(s1, length, s1):
         for y in np.arange(s2, width, s2):
-            ax.plot([
+            ax.fill([
                 x - column_size/2, x + column_size/2, x + column_size/2, x - column_size/2, x - column_size/2
             ], [
                 y - column_size/2, y - column_size/2, y + column_size/2, y + column_size/2, y - column_size/2
             ], color='black', linewidth=0.3)
             
+    # Plot s1
+    for x in np.arange(s1, length - s1, s1):
+        for y in np.arange(s2, width, s2):        
+            
+            ax.plot([
+                x + column_size/2, x + column_size/2, x + s1 - column_size/2, x + s1 - column_size/2, x + column_size/2
+            ], [
+                y - column_size/2, y + column_size/2, y + column_size/2, y - column_size/2, y - column_size/2
+            ], color='black', linewidth=0.3, linestyle='--')
+            
+    # Plot s2
+    for x in np.arange(s1, length, s1):
+        for y in np.arange(s2, width - s2, s2):        
+            
+            ax.plot([
+                x - column_size/2, x - column_size/2, x + column_size/2, x + column_size/2, x - column_size/2
+            ], [
+                y + column_size/2, y + column_size/2 + s2, y + column_size/2 + s2, y + column_size/2, y + column_size/2
+            ], color='black', linewidth=0.3, linestyle=':')
+            
+            
     # Call secondary element plot function
-    plot_staircase(ax, s1, s2, column_size)
+    plot_staircase(ax, s1, s2, column_size, length, width)
+    
+    # Plot Slab
+    if structure_type == "CIS Beam + CIS Slab + CIS Column":
+        for x in np.arange(s1, length - s1, s1):
+            for y in np.arange(s2, width - s2, s2):        
+                ax.text(x + s1/2, y + s2/2, '~', fontsize=8, color='black', ha='center', va='center')
+                
+    if structure_type == "CIS Beam + CIS Slab + CIS Column":
+        ax.text(length - (1.5*s1), 0.5* s2, f"{b_s1_mm:.0f} × \n {d_s1_mm}(d) mm" ,  # Text content
+                fontsize=6,
+                color='black',
+                ha='center',  # Horizontal alignment
+                va='center',  # Vertical alignment
+                bbox=dict(boxstyle="round,pad=0.3", edgecolor="black", facecolor="white"))
+        
+        ax.text(length - (0.5*s1), 1.5* s2, f"{b_s2_mm:.0f} × \n {d_s2_mm}(d) mm" ,  # Text content
+                fontsize=6,
+                color='black',
+                ha='center',  # Horizontal alignment
+                va='center',  # Vertical alignment
+                bbox=dict(boxstyle="round,pad=0.3", edgecolor="black", facecolor="white"))    
+        
+    # Create a filled square for the legend
+    filled_square = mpatches.Patch(color='black', label=f"Column {column_size*1000:.0f} x {column_size*1000:.0f}mm ")
+
+    # Add legend with the filled square
+    ax.legend(handles=[filled_square], loc='upper left', fontsize=6)   
     
     return fig
 
-def plot_staircase(ax, s1, s2, column_size):
+def plot_staircase(ax, s1, s2, column_size, length, width):
     """
     Plot a staircase layout within the grid (plan view).
     """
@@ -188,51 +248,122 @@ def plot_staircase(ax, s1, s2, column_size):
     tread_depth = 0.3  # m
     landing_length = 2  # m
     stair_width = 1.2  # m
+    wall_width = 0.2
+    Lift_external = 2.5
 
     # Calculate number of risers and treads
     num_risers = int(floor_to_floor_height / riser_height)
     num_treads_per_flight = (num_risers // 2) - 1
 
-    # First flight of stairs
+    # First flight of stairs 1
     for i in range(num_treads_per_flight):
-        x_start = i * tread_depth + s1 + 2 + column_size/2
+        x_start = i * tread_depth + s1 + landing_length + column_size/2
         x_end = x_start + tread_depth
-        y_start = s2 - column_size/2 - stair_width -0.1
+        y_start = s2 - column_size/2 - stair_width - wall_width
         y_end = y_start + stair_width
         ax.plot([x_start, x_end], [y_start, y_start], color='black', linewidth=0.1)
         ax.plot([x_start, x_end], [y_end, y_end], color='black', linewidth=0.1)
         ax.plot([x_start, x_start], [y_start, y_end], color='black', linewidth=0.1)
 
-    # Second flight of stairs
+    # Second flight of stairs 1
     for i in range(num_treads_per_flight):
-        x_start = i * tread_depth + s1 + 2 + column_size/2
+        x_start = i * tread_depth + s1 + landing_length + column_size/2
         x_end = x_start + tread_depth
-        y_start = s2 - column_size/2 - stair_width - stair_width - 0.3
+        y_start = s2 - column_size/2 - stair_width - stair_width - wall_width - wall_width
         y_end = y_start + stair_width
         ax.plot([x_start, x_end], [y_start, y_start], color='black', linewidth=0.1)
         ax.plot([x_start, x_end], [y_end, y_end], color='black', linewidth=0.1)
         ax.plot([x_start, x_start], [y_start, y_end], color='black', linewidth=0.1)
 
-    # Intermediate landing
+    # Intermediate landing 1
     landing_start = s1 + column_size/2
     landing_end = landing_start + landing_length
-    y_start = s2 - column_size/2 - stair_width - stair_width - 0.3
-    y_end = y_start + stair_width + stair_width - 0.1
+    y_start = s2 - column_size/2 - stair_width - stair_width - wall_width - wall_width
+    y_end = s2 - column_size/2
     ax.plot([landing_start, landing_end], [y_start, y_start], color='black', linewidth=0.1)
     ax.plot([landing_start, landing_end], [y_end, y_end], color='black', linewidth=0.1)
     ax.plot([landing_start, landing_start], [y_start, y_end], color='black', linewidth=0.1)
     ax.plot([landing_end, landing_end], [y_start, y_end], color='black', linewidth=0.1)
 
-    # 2nd Intermediate landing
+    # 2nd Intermediate landing 1
     landing_start = s1 + column_size/2 + num_treads_per_flight*tread_depth + landing_length
     landing_end = landing_start + landing_length
-    y_start = s2 - column_size/2 - stair_width - stair_width - 0.3
-    y_end = y_start + stair_width + stair_width - 0.1
+    y_start = s2 - column_size/2 - stair_width - stair_width - wall_width - wall_width
+    y_end = y_start + stair_width + stair_width + wall_width
+    ax.plot([landing_start, landing_end], [y_start, y_start], color='black', linewidth=0.1)
+    ax.plot([landing_start, landing_end], [y_end, y_end], color='black', linewidth=0.1)
+    ax.plot([landing_start, landing_start], [y_start, y_end], color='black', linewidth=0.1)
+    ax.plot([landing_end, landing_end], [y_start, y_end], color='black', linewidth=0.1)
+    
+    # Wall1
+    wall_end = s1 + column_size/2 + num_treads_per_flight*tread_depth + 2 * landing_length
+    wall_start = s1 + column_size/2
+    wall_intermediate = s1 + column_size/2 + landing_length
+    ywall_start = s2 - column_size/2 - stair_width - stair_width - wall_width - wall_width
+    ywall_end = y_start + stair_width + stair_width + wall_width
+    ax.plot([wall_start - wall_width, wall_start - wall_width, wall_end + wall_width, wall_end + wall_width, wall_intermediate], [ywall_end, ywall_start - wall_width, ywall_start - wall_width, ywall_end + wall_width, ywall_end + wall_width], color='black', linewidth=0.1)
+
+    # lift1
+    corner_x = s1 - column_size/2
+    corner_large = s2 + column_size/2
+    corner_small = s2 + column_size/2 + wall_width
+    ax.plot([corner_x, corner_x-Lift_external, corner_x-Lift_external, corner_x], [corner_large, corner_large, corner_large+Lift_external, corner_large+Lift_external], color='black', linewidth=0.1)
+    ax.plot([corner_x, corner_x-Lift_external+wall_width, corner_x-Lift_external+wall_width, corner_x], [corner_small, corner_small, corner_small+Lift_external-wall_width-wall_width, corner_small+Lift_external-wall_width-wall_width], color='black', linewidth=0.1)
+
+    # First flight of stairs 2
+    for i in range(num_treads_per_flight):
+        x_start = length - s1 - (i * tread_depth) - landing_length
+        x_end = x_start - tread_depth
+        y_start = width - s2 + column_size/2 + wall_width
+        y_end = y_start + stair_width 
+        ax.plot([x_start, x_end], [y_start, y_start], color='black', linewidth=0.1)
+        ax.plot([x_start, x_end], [y_end, y_end], color='black', linewidth=0.1)
+        ax.plot([x_start, x_start], [y_start, y_end], color='black', linewidth=0.1)
+
+    # Second flight of stairs 2
+    for i in range(num_treads_per_flight):
+        x_start = length - s1 - (i * tread_depth) - landing_length 
+        x_end = x_start - tread_depth
+        y_start = width - s2 + column_size/2 + wall_width + wall_width + stair_width
+        y_end = y_start + stair_width
+        ax.plot([x_start, x_end], [y_start, y_start], color='black', linewidth=0.1)
+        ax.plot([x_start, x_end], [y_end, y_end], color='black', linewidth=0.1)
+        ax.plot([x_start, x_start], [y_start, y_end], color='black', linewidth=0.1)
+        
+    # Intermediate landing 2
+    landing_start = length - s1 - landing_length - column_size/2 + tread_depth
+    landing_end = landing_start + landing_length
+    y_start = width - s2 + column_size/2 + wall_width + wall_width + stair_width + stair_width
+    y_end = width - s2 + column_size/2 + wall_width
     ax.plot([landing_start, landing_end], [y_start, y_start], color='black', linewidth=0.1)
     ax.plot([landing_start, landing_end], [y_end, y_end], color='black', linewidth=0.1)
     ax.plot([landing_start, landing_start], [y_start, y_end], color='black', linewidth=0.1)
     ax.plot([landing_end, landing_end], [y_start, y_end], color='black', linewidth=0.1)
 
+    # 2nd Intermediate landing 2
+    landing_start = length - s1 - landing_length - column_size/2 + tread_depth - num_treads_per_flight*tread_depth - landing_length
+    landing_end = landing_start + landing_length
+    y_start = width - s2 + column_size/2 + wall_width + wall_width + stair_width + stair_width
+    y_end = width - s2 + column_size/2
+    ax.plot([landing_start, landing_end], [y_start, y_start], color='black', linewidth=0.1)
+    ax.plot([landing_start, landing_end], [y_end, y_end], color='black', linewidth=0.1)
+    ax.plot([landing_start, landing_start], [y_start, y_end], color='black', linewidth=0.1)
+    ax.plot([landing_end, landing_end], [y_start, y_end], color='black', linewidth=0.1)
+    
+     # Wall1
+    wall_end = length - s1 - landing_length - column_size/2 + tread_depth - num_treads_per_flight*tread_depth - landing_length + num_treads_per_flight*tread_depth + 2 * landing_length
+    wall_start = length - s1 - landing_length - column_size/2 + tread_depth - num_treads_per_flight*tread_depth - landing_length
+    wall_intermediate = length - s1 - landing_length - column_size/2 + tread_depth - num_treads_per_flight*tread_depth
+    ywall_start = width - s2 + column_size/2
+    ywall_end = ywall_start + (2 * stair_width) + (3 * wall_width)
+    ax.plot([wall_start - wall_width, wall_start - wall_width, wall_end + wall_width, wall_end + wall_width, wall_intermediate], [ywall_start, ywall_end, ywall_end, ywall_start, ywall_start], color='black', linewidth=0.1)
+
+    # lift2
+    corner_x = length - s1 + column_size/2
+    corner_large = width - s2 - column_size/2
+    corner_small = width - s2 - column_size/2 + wall_width
+    ax.plot([corner_x, corner_x+Lift_external, corner_x+Lift_external, corner_x], [corner_large, corner_large, corner_large-Lift_external, corner_large-Lift_external], color='black', linewidth=0.1)
+    ax.plot([corner_x, corner_x+Lift_external+wall_width, corner_x+Lift_external+wall_width, corner_x], [corner_small, corner_small, corner_small-Lift_external-wall_width-wall_width, corner_small-Lift_external-wall_width-wall_width], color='black', linewidth=0.1)
 
 
 # Function to save plot to PDF and return as BytesIO
@@ -247,7 +378,7 @@ st.title("Construction Layout Inputs")
 
 # User inputs for boundaries and grid scale
 
-s1 = st.number_input("Enter Beam Span (Required Column to Column clear distance) (m):", min_value=0, max_value=30, step=1, value=5)
+s1 = st.number_input("Enter Beam Span S1 (Required Column to Column clear distance) (m):", min_value=0, max_value=30, step=1, value=5)
 s2 = st.number_input("Enter Beam Span S2 (will be adjusted based on chosen structure design) (m):", min_value=0, max_value=30, step=1, value=5)
 live_load = st.number_input("Enter Live Load (kN/m²):", min_value=0.0, max_value=40.0, step=0.1, value=10.0)
 lengthinput = st.number_input("Enter the building length (meters):", min_value=1, value=16)
@@ -255,10 +386,32 @@ widthinput = st.number_input("Enter the building width (meters):", min_value=1, 
 length = math.ceil((lengthinput + (2 * s1)) / s1) * s1
 width = math.ceil((widthinput + (2 * s2)) / s2) * s2
 
+structure_type = st.selectbox(
+    "Select Structure Type:",
+    options=["",
+             "CIS Beam + CIS Slab + CIS Column",
+             "CIS Beam + CIS Slab + PC Column", 
+             "CIS Beam + HC Slab + CIS Column",
+             "CIS Beam + HC Slab + PC Column",
+             "PT Beam + HC Slab + CIS Column",
+             "PT Beam + HC Slab + PC Column",
+             "PT Flat Slab and Beam + CIS Column",
+             "PT Flat Slab and Beam + PC Column",
+             "PT Beam + DoubleTee Slab + CIS Column",
+             "PT Beam + DoubleTee Slab + PC Column",
+             "I Beam + Bondek + CIS Column",
+             "I Beam + Bondek + PC Column",
+             "I Beam + Bondek + CES Column",
+             "I Beam + Bondek + SEC Column",
+             ]
+)
+
 # Generate and display the grid plot
 if st.button("Generate Grid"):
     column_size = calculate_column_size(s1, s2, live_load)
-    fig = create_grid_plot(length+(2*s1), width+(2*s2), s1, column_size, s2)
+    b_s2_mm, d_s2_mm = calculate_beam_size_1way(s1, s2, live_load, column_size)
+    b_s1_mm, d_s1_mm = calculate_unloaded_beam(s1, column_size)
+    fig = create_grid_plot(length+(2*s1), width+(2*s2), s1, column_size, s2, structure_type, b_s2_mm, d_s2_mm,b_s1_mm, d_s1_mm)
     st.pyplot(fig)
 
     # Allow user to download the grid plot as a PDF
@@ -270,13 +423,3 @@ if st.button("Generate Grid"):
         mime="application/pdf"
     )
 
-if st.button("Calculate Size"):
-    # Calculate column size
-    column_size = calculate_column_size(s1, s2, live_load)
-    
-    # Calculate beam sizes for S1 and S2
-    b_s1_mm, d_s1_mm = calculate_beam_size_1way(s1, s2, live_load)
-    
-    # Display results
-    st.write(f"The required column size is: {column_size} mm x {column_size} mm")
-    st.write(f"Beam Dimensions: {b_s1_mm} mm x {d_s1_mm} mm")
