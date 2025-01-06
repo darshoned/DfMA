@@ -348,8 +348,8 @@ def create_grid_plot(length, width, s1, column_size, s2, structure_type, b_s2_mm
     
     # Plot Slab
     if structure_type == "CIS Beam + CIS Slab + CIS Column":
-        for x in np.arange(s1, length + 2* s1, s1):
-            for y in np.arange(s2, width + 2* s2, s2):        
+        for x in np.arange(s1, length + s1, s1):
+            for y in np.arange(s2, width + s2, s2):        
                 ax.text(x + s1/2, y + s2/2, '~', fontsize=8, color='black', ha='center', va='center')
                 
     if structure_type == "CIS Beam + CIS Slab + CIS Column":
