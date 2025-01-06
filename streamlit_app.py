@@ -552,13 +552,13 @@ def save_plot_to_pdf(fig):
     return pdf_bytes
 
 # Streamlit app
-st.title("Construction Layout Inputs")
+st.title("DfMA Model Inputs")
 
 # User inputs for boundaries and grid scale
 
 s1 = st.number_input("Enter Beam Span S1 (Required Column to Column clear distance) (m):", min_value=5, max_value=20, step=1, value=8)
 s2 = st.number_input("Enter Beam Span S2 (may be adjusted based on chosen structure design) (m):", min_value=0, max_value=20, step=1, value=4)
-live_load = st.number_input("Enter Live Load (kN/m²):", min_value=0.0, max_value=8.0, step=0.1, value=4.0)
+live_load = st.number_input("Enter Live Load (kN/m²):", min_value=0.0, max_value=8.0, step=0.1, value=5.0)
 lengthinput = st.number_input("Enter the building length (meters):", min_value=20, max_value=100, step=1, value=40)
 widthinput = st.number_input("Enter the building width (meters):", min_value=20, max_value=40, step=1, value=30)
 length = math.ceil((lengthinput) / s1) * s1
