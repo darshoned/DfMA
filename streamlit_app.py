@@ -102,7 +102,8 @@ def Calculate_Layout_outputs(s1, s2, live_load, column_size, structure_type, len
      # Manpower Outputs
         manpower_output = [
         round(total_mandays_crane),
-        round(total_productivity_crane,2)
+        round(total_productivity_crane,2),
+        round(total_productivity_crane/2,2)
         ]
 
     return design_output,equipment_output,utility_output,manpower_output, beam_manhours, column_manhours, slab_manhours, casting_manhours
@@ -558,8 +559,8 @@ st.title("DfMA Model Inputs")
 
 s1 = st.number_input("Enter Beam Span S1 (Required Column to Column clear distance) (m):", min_value=5, max_value=20, step=1, value=8)
 s2 = st.number_input("Enter Beam Span S2 (may be adjusted based on chosen structure design) (m):", min_value=0, max_value=20, step=1, value=4)
-live_load = st.number_input("Enter Live Load (kN/m²):", min_value=0.0, max_value=8.0, step=0.1, value=5.0)
-lengthinput = st.number_input("Enter the building length (meters):", min_value=20, max_value=100, step=1, value=40)
+live_load = st.number_input("Enter Live Load (kN/m²):", min_value=0.0, max_value=8.0, step=0.1, value=3.0)
+lengthinput = st.number_input("Enter the building length (meters):", min_value=20, max_value=100, step=1, value=60)
 widthinput = st.number_input("Enter the building width (meters):", min_value=20, max_value=40, step=1, value=30)
 length = math.ceil((lengthinput) / s1) * s1
 width = math.ceil((widthinput) / s2) * s2
@@ -671,6 +672,7 @@ if st.button("Generate Grid"):
         "Category": [
             "Total Mandays (Structure only)",
             "Total Productivity m2/manday(Structure only)",
+            "Total Productivity m2/manday(Total)",
         ],
         "Value": manpower_output
     }
@@ -716,3 +718,34 @@ if st.button("Generate Grid"):
         st.subheader("Manpower")
         st.markdown(create_html_table(df_manpower), unsafe_allow_html=True)
 
+# Generate plot data based on live loads
+#if st.button("Plot Live Load vs Total Productivity"):
+    
+   # live_loads = np.arange(1, 6, 1)  # Live load values from 1 to 5 (kN/m²)
+   # productivity_values = []
+   # for live_load in live_loads:
+        # Recalculate outputs for each live load
+   #     s1= 8
+    #    s2=4
+     #   length = 60
+      #  width = 30
+       # column_size = calculate_column_size(s1, s2, live_load)
+        #b_s2_mm, d_s2_mm = calculate_beam_size_1way(s1, s2, live_load, column_size)
+        #b_s1_mm, d_s1_mm = calculate_unloaded_beam(s1, column_size)
+        #slab_thickness = calculate_slab_thickness_CIS(s1, live_load)
+        #design_output, equipment_output, utility_output, manpower_output, beam_manhour, column_manhours, slab_manhours, casting_manhours = Calculate_Layout_outputs(
+        #    s1, s2, live_load, column_size, structure_type, length, width, b_s1_mm, d_s1_mm, b_s2_mm, d_s2_mm, slab_thickness
+        #)
+        #
+        # Extract total productivity from manpower_output (third array element)
+        #total_productivity = manpower_output[2]  # Assuming third element is total productivity
+        #productivity_values.append(total_productivity)
+
+    # Plotting
+    #fig, ax = plt.subplots()
+    #ax.plot(live_loads, productivity_values, marker='o', linestyle='-', color='blue')
+    #ax.set_title("Live Load vs Total Productivity", fontsize=16)
+    #ax.set_xlabel("Live Load (kN/m²)", fontsize=12)
+    #ax.set_ylabel("Total Productivity (m²/manday)", fontsize=12)
+    #ax.grid(True)
+    #st.pyplot(fig)
