@@ -1,6 +1,7 @@
 import math
 
-def calculate_beam_size(s1, s2, live_load, column_size_mm, selected_beam):
+def calculate_beam_size(s1, s2, live_load, column_size_mm, selected_beam, dead_load=7.0, f_ck=40, b_to_d_ratio=0.5, k_con=0.167, k_pt = 0.25,
+    gamma_c=1.5, gamma_s=1.15, gamma_DL=1.35, gamma_LL=1.5):
     """
     Calculate beam depth and width for given parameters with safety factors applied.
     
@@ -22,8 +23,7 @@ def calculate_beam_size(s1, s2, live_load, column_size_mm, selected_beam):
     - s1_width_mm (float): Corresponding beam width in mm.
     """
     # Apply safety factors to loads
-    dead_load=7.0, f_ck=40, b_to_d_ratio=0.5, k_con=0.167, k_pt = 0.25,
-    gamma_c=1.5, gamma_s=1.15, gamma_DL=1.35, gamma_LL=1.5
+
     design_dead_load = dead_load * gamma_DL
     design_live_load = live_load * gamma_LL
     q_total = design_dead_load + design_live_load  # kN/m²
@@ -46,13 +46,13 @@ def calculate_beam_size(s1, s2, live_load, column_size_mm, selected_beam):
 
         # Adjust width to maintain width-to-depth ratio
         b_s2_mm = d_s2_mm * b_to_d_ratio  # Corresponding width in mm
-        d_s2_mm = round(d_s2_mm* 1000 / 100) * 100 
-        b_s2_mm = round(b_s2_mm* 1000 / 100) * 100
+        b_s2_mm = max(column_size_mm*1000,b_s2_mm)
+        d_s2_mm = round(d_s2_mm / 100) * 100 
     
         b_s1_mm = column_size_mm * 1000
         d_s1 = s1 /15 #1:15 conventional
         d_s1_mm = round(d_s1 * 1000 / 100) * 100  # Depth in mm
-        d_s1_mm = min(d_s1_mm,b_s1_mm)
+        d_s1_mm = max(d_s1_mm,b_s1_mm)
         
     if selected_beam == "PT Beam":
 
@@ -77,4 +77,4 @@ def calculate_beam_size(s1, s2, live_load, column_size_mm, selected_beam):
         b_s1_mm = 0
         d_s1_mm = 0
     
-    return b_s1_mm, d_s1_mm, b_s2_mm, d_s2_mm
+    return int(b_s1_mm), int(d_s1_mm), int(b_s2_mm), int(d_s2_mm)
