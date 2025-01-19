@@ -82,8 +82,8 @@ if selected_combination in available_combinations:
 else:
     st.warning("The selected combination is not available. Please choose a valid option.")
 
-s1 = st.number_input("Enter Beam Span S1 (Required Column to Column clear distance) (m):", min_value=5, max_value=20, step=1, value=10)
-s2 = st.number_input("Enter Beam Span S2 (may be adjusted based on chosen structure design) (m):", min_value=0, max_value=20, step=1, value=10)
+s1 = st.number_input("Enter Beam Span S1 (Required Column to Column clear distance) (m):", min_value=5, max_value=13, step=1, value=10)
+s2 = st.number_input("Enter Beam Span S2 (may be adjusted based on chosen structure design) (m):", min_value=0, max_value=12, step=1, value=10)
 live_load = st.number_input("Enter Live Load (kN/m²):", min_value=0.0, max_value=20.0, step=0.1, value=3.0)
 lengthinput = st.number_input("Enter the building length (meters):", min_value=20, max_value=100, step=1, value=60)
 widthinput = st.number_input("Enter the building width (meters):", min_value=20, max_value=40, step=1, value=40)
