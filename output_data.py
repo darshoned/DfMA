@@ -78,7 +78,7 @@ def calculate_layout_outputs(s1, s2, live_load, column_size_mm, selected_column,
     
     if (selected_beam == "CIS Beam"):
         formwork_area_beams = (no_s1 * s1 * (b_s1_m + 1)) + (no_s2 * s2 * (b_s2_m + 1))
-        beam_rebar_percentage = 4
+        beam_rebar_percentage = 3
         weight_beam_rebar = math.ceil(((no_s1 * b_s1_m * d_s1_m * s1) + (no_s2 * b_s2_m * d_s2_m * s2)) * 7.85 * beam_rebar_percentage/100) #7.85 density rebar
         beam_cis_volume = math.ceil((no_s1 * b_s1_m * d_s1_m * s1) + (no_s2 * b_s2_m * d_s2_m * s2))
 
@@ -155,13 +155,13 @@ def calculate_layout_outputs(s1, s2, live_load, column_size_mm, selected_column,
         slab_cis_volume = topping_area_slabs * slab_thickness_m
         
         # Calculate the number of x positions
-        N_x = int((length + s1 - (s1 * 1.5)) / s1)
+        N_x = int(length / s1)
 
         # Calculate the number of y positions
-        N_y = int((width + s2 - (s2 + 2 * column_size_mm)) / s2)
+        N_y = int(width/ s2)
 
         # Calculate the number of stacked rectangles per position
-        N_stacked = math.floor(s2 / 1.2)
+        N_stacked = int((s2 -column_size_mm) / 1.2)
 
         # Calculate the total number of 1.2HCS
         no_unpropped_slabs = int(N_x * N_y * N_stacked)
@@ -184,9 +184,9 @@ def calculate_layout_outputs(s1, s2, live_load, column_size_mm, selected_column,
         N_y = int((width + s2 - (s2 + 2 * column_size_mm)) / s2)
 
         # Calculate the number of stacked rectangles per position
-        N_stacked = math.floor(s2 / 2.4)
+        N_stacked = math.floor((s2 -column_size_mm) / 2.4)
 
-        # Calculate the total number of 1.2HCS
+        # Calculate the total number of 2.4HCS
         no_unpropped_slabs = int(N_x * N_y * N_stacked)
  
         slab_manhours = math.ceil(weight_slab_rebar * manhour_mesh_ton + no_unpropped_slabs * manhour_vertical_nonrc_pc) #prepare topping + hoisting
