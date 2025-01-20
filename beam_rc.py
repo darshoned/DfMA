@@ -62,8 +62,8 @@ def calculate_beam_size(s1, s2, live_load, column_size_mm, selected_beam, dead_l
 
         # Adjust width to maintain width-to-depth ratio
         b_s2_mm = d_s2_mm * b_to_d_ratio  # Corresponding width in mm
-        d_s2_mm = round(d_s2_mm* 1000 / 100) * 100 
-        b_s2_mm = round(b_s2_mm* 1000 / 100) * 100
+        d_s2_mm = round(d_s2_mm / 100) * 100 
+        b_s2_mm = round(b_s2_mm / 100) * 100
     
         b_s1_mm = column_size_mm * 1000
         d_s1 = s1 /15 #1:20 pt
