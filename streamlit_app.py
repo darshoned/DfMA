@@ -27,6 +27,7 @@ st.title("DfMA Model Inputs")
 column_options = [
     "CIS Column",
     "PC Column",
+    "Steel Column (Not Available)",
     "CES Column (Not Available)",
     "SEC Column (Not Available)",
 ]
@@ -34,8 +35,10 @@ column_options = [
 beam_options = [
     "CIS Beam",
     "PT Beam",
-    "I Beam (Not Available)",
     "PT Flat Slab",
+    "CES Beam (Not Available)",
+    "I Beam (Not Available)",
+    "Castellated I Beam (Not Available)",
 ]
 
 slab_options = [
@@ -43,6 +46,7 @@ slab_options = [
     "1.2HC Slab",
     "2.4HC Slab",
     "PT Flat Slab",
+    "Bubble Deck Slab (Not Available)",
     "DoubleTee Slab (Not Available)",
     "Bondek (Not Available)",
 ]
@@ -221,5 +225,4 @@ if st.button("Generate"):
     with col4:
         st.subheader("Manpower")
         st.markdown(create_html_table(df_manpower), unsafe_allow_html=True)
-
 
