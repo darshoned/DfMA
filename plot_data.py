@@ -244,25 +244,7 @@ def create_grid_plot(length, width, s1, s2, live_load,selected_column, selected_
     if selected_column == "PC Column":
         column_legend = mpatches.Patch(color='black', label=f"PC Column {column_size_mm*1000:.0f} x {column_size_mm*1000:.0f}mm ")
     
-    # Plot s1
-    for x in np.arange(s1, length+s1, s1):
-        for y in np.arange(s2, width + 2*s2, s2):        
-            
-            ax.plot([
-                x + column_size_mm/2, x + column_size_mm/2, x + s1 - column_size_mm/2, x + s1 - column_size_mm/2, x + column_size_mm/2
-            ], [
-                y - column_size_mm/2, y + column_size_mm/2, y + column_size_mm/2, y - column_size_mm/2, y - column_size_mm/2
-            ], color='black', linewidth=0.3, linestyle='--')
-            
-    # Plot s2
-    for x in np.arange(s1, length + 2*s1, s1):
-        for y in np.arange(s2, width+s2, s2):        
-            
-            ax.plot([
-                x - column_size_mm/2, x - column_size_mm/2, x + column_size_mm/2, x + column_size_mm/2, x - column_size_mm/2
-            ], [
-                y + column_size_mm/2, y + column_size_mm/2 + s2, y + column_size_mm/2 + s2, y + column_size_mm/2, y + column_size_mm/2
-            ], color='black', linewidth=0.3, linestyle=':')
+
             
             
     # Call secondary element plot function
@@ -411,9 +393,35 @@ def create_grid_plot(length, width, s1, s2, live_load,selected_column, selected_
                 color='black',
                 ha='center',  # Horizontal alignment
                 va='center',  # Vertical alignment
-                bbox=dict(boxstyle="round,pad=0.3", edgecolor="black", facecolor="white"))    
+                bbox=dict(boxstyle="round,pad=0.3", edgecolor="black", facecolor="white"))
+        
+            # Plot s1
+        for x in np.arange(s1, length+s1, s1):
+            for y in np.arange(s2, width + 2*s2, s2):        
+            
+                ax.plot([
+                    x + column_size_mm/2, x + column_size_mm/2, x + s1 - column_size_mm/2, x + s1 - column_size_mm/2, x + column_size_mm/2
+                ], [
+                    y - column_size_mm/2, y + column_size_mm/2, y + column_size_mm/2, y - column_size_mm/2, y - column_size_mm/2
+                ], color='black', linewidth=0.3, linestyle='--')
+            
+            # Plot s2
+        for x in np.arange(s1, length + 2*s1, s1):
+            for y in np.arange(s2, width+s2, s2):        
+            
+                ax.plot([
+                    x - column_size_mm/2, x - column_size_mm/2, x + column_size_mm/2, x + column_size_mm/2, x - column_size_mm/2
+                ], [
+                    y + column_size_mm/2, y + column_size_mm/2 + s2, y + column_size_mm/2 + s2, y + column_size_mm/2, y + column_size_mm/2
+                ], color='black', linewidth=0.3, linestyle=':')
 
-
+    #label Beams                
+    if selected_beam in ["PT Flat Slab"]:
+        ax.plot([
+                    s1- column_size_mm/2, s1- column_size_mm/2, s1 + length + column_size_mm/2, s1 + length + column_size_mm/2, s1- column_size_mm/2
+                ], [
+                    s2 - column_size_mm/2, s2 + width + column_size_mm/2, s2 + width + column_size_mm/2, s2 - column_size_mm/2, s2 - column_size_mm/2
+                ], color='black', linewidth=0.6)
 
     
     # Add legend with the filled square
