@@ -166,7 +166,7 @@ def plot_crane(ax, width, length, s1, s2):
         
         
 # Function to create a grid plot based on user inputs
-def create_grid_plot(length, width, s1, s2, live_load,selected_column, selected_beam, selected_slab, column_size_mm, column_weight_tonnes, b_s1_mm, d_s1_mm, b_s2_mm, d_s2_mm, slab_thickness_mm, slab_max_spacing_pt_mm, hcs_slab_thickness_mm):
+def create_grid_plot(length, width, s1, s2, live_load, selected_column, selected_beam, selected_slab, column_size_mm, column_weight_tonnes, b_s1_mm, d_s1_mm, b_s2_mm, d_s2_mm, b_s3_mm, d_s3_mm, slab_thickness_mm, slab_max_spacing_pt_mm, hcs_slab_thickness_mm):
     
     fig, ax = plt.subplots(figsize=(8, 6))
 
@@ -346,6 +346,59 @@ def create_grid_plot(length, width, s1, s2, live_load,selected_column, selected_
         alpha=0.7,
         label=f"2.4m HCS {hcs_slab_thickness_mm:.0f} mm thick"
         )  
+        
+        
+    if selected_slab == "1.2HCS_S3":
+        # Rectangle dimensions in meters
+        rectangle_width = 1.2  # Width of each rectangle in meters
+        rectangle_length = (s1/2)  # Length of each rectangle in meters
+
+        # Calculate the starting y-coordinate range
+        y_positions = np.arange((s2 + 2*column_size_mm), width + s2, s2)  # Midpoints of y-grid
+
+        # Plot rectangles along both axes
+        for x in np.arange(s1 * 1.5, length + s1, s1/2):  # Iterate through x-grid positions
+            for y in y_positions:  # Iterate through y-grid positions
+                # Number of stacked rectangles
+                num_stacked_rectangles = int((s2 - column_size_mm) / rectangle_width)  # Number of rectangles to stack
+                
+                for i in range(num_stacked_rectangles):  # Iterate for stacking
+                    y_offset = i * rectangle_width  # Offset for stacking rectangles
+                    
+                    # Calculate the coordinates of each rectangle
+                    ax.fill(
+                        [
+                            x - rectangle_length, x + rectangle_length,  # Left and Right x-coordinates
+                            x + rectangle_length, x - rectangle_length,  # Close rectangle
+                        ],
+                        [
+                            y - rectangle_width / 2 + y_offset, y - rectangle_width / 2 + y_offset,  # Bottom y-coordinates
+                            y + rectangle_width / 2 + y_offset, y + rectangle_width / 2 + y_offset,  # Top y-coordinates
+                        ],
+                        color="lightgray", edgecolor="black", linewidth=0.5, alpha=0.7
+                    )
+
+        # Add the slab legend
+        slab_legend = mpatches.Rectangle(
+            (0, 0),  # Dummy position
+            width=1,
+            height=0.5,
+            edgecolor="black",
+            facecolor="lightgray",
+            alpha=0.7,
+            label=f"1.2m HCS {hcs_slab_thickness_mm:.0f} mm thick"
+        )
+
+        # Plot the 'S3' columns within the same block
+        for x in np.arange(s1, length + s1, s1):
+            for y in np.arange(s2, width+s2, s2):        
+            
+                ax.plot([
+                    x - column_size_mm/2 + s1/2, x - column_size_mm/2+ s1/2, x + column_size_mm/2+ s1/2, x + column_size_mm/2+ s1/2, x - column_size_mm/2+ s1/2
+                ], [
+                    y + column_size_mm/2, y + column_size_mm/2 + s2, y + column_size_mm/2 + s2, y + column_size_mm/2, y + column_size_mm/2
+                ], color='black', linewidth=0.3, linestyle=':')
+
                 
     if selected_slab == "PT Flat Slab":
         # Define the slab boundaries based on the grid
