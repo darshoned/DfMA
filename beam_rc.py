@@ -1,6 +1,6 @@
 import math
 
-def calculate_beam_size(s1, s2, live_load, column_size_mm, selected_beam, dead_load=7.0, f_ck=40, b_to_d_ratio=0.5, k_con=0.167, k_pt = 0.25,
+def calculate_beam_size(s1, s2, live_load, column_size_mm, selected_beam, selected_slab, dead_load=7.0, f_ck=40, b_to_d_ratio=0.5, k_con=0.167, k_pt = 0.25,
     gamma_c=1.5, gamma_s=1.15, gamma_DL=1.35, gamma_LL=1.5):
     """
     Calculate beam depth and width for given parameters with safety factors applied.
@@ -37,6 +37,9 @@ def calculate_beam_size(s1, s2, live_load, column_size_mm, selected_beam, dead_l
     # Maximum bending moment (simply supported beam)
     M = (w * s1**2) / 8  # Bending moment in kNm
     M_Nmm = M * 1e6  # Convert kNm to Nmm
+    
+    b_s3_mm = 0
+    d_s3_mm = 0
     
     if selected_beam == "CIS Beam":
 
@@ -76,5 +79,56 @@ def calculate_beam_size(s1, s2, live_load, column_size_mm, selected_beam, dead_l
         d_s2_mm = 0
         b_s1_mm = 0
         d_s1_mm = 0
+        b_s3_mm = 0
+        d_s3_mm = 0
+        
+        
+    if selected_slab in ["1.2HCS_S3", "2.4HCS_S3"]:
+
+        if selected_beam == "CIS Beam":
+
+        # Calculate required depth (d)
+            b_s2_mm = 300  # Default initial beam width in mm
+            d_s2_mm = math.sqrt(M_Nmm/2 / (k_con * b_s2_mm * f_cd))  # Depth in mm
+
+            # Adjust width to maintain width-to-depth ratio
+            b_s2_mm = d_s2_mm * b_to_d_ratio  # Corresponding width in mm
+            b_s2_mm = max(column_size_mm*1000,b_s2_mm)
+            d_s2_mm = round(d_s2_mm / 100) * 100 
+        
+            b_s1_mm = 300  # Default initial beam width in mm
+            d_s1_mm = math.sqrt(M_Nmm / (k_con * b_s1_mm * f_cd))  # Depth in mm
+            b_s1_mm = d_s1_mm * b_to_d_ratio  # Corresponding width in mm
+            b_s1_mm = max(column_size_mm*1000,b_s2_mm)
+            d_s1_mm = round(d_s1_mm / 100) * 100 
+            
+            b_s3_mm = b_s2_mm
+            d_s3_mm = d_s2_mm
     
-    return int(b_s1_mm), int(d_s1_mm), int(b_s2_mm), int(d_s2_mm)
+        if selected_beam == "PT Beam":
+
+        # Calculate required depth (d)
+            b_s2_mm = 300  # Default initial beam width in mm
+            d_s2_mm = math.sqrt(M_Nmm/2 / (k_pt * b_s2_mm * f_cd))  # Depth in mm
+
+            # Adjust width to maintain width-to-depth ratio
+            b_s2_mm = d_s2_mm * b_to_d_ratio  # Corresponding width in mm
+            d_s2_mm = round(d_s2_mm / 100) * 100 
+            b_s2_mm = round(b_s2_mm / 100) * 100
+        
+            b_s1_mm = 300  # Default initial beam width in mm
+            d_s1_mm = math.sqrt(M_Nmm / (k_pt * b_s1_mm * f_cd))  # Depth in mm
+            b_s1_mm = d_s1_mm * b_to_d_ratio  # Corresponding width in mm
+            b_s1_mm = max(column_size_mm*1000,b_s2_mm)
+            d_s1_mm = round(d_s1_mm / 100) * 100 
+            
+            b_s3_mm = 300  # Default initial beam width in mm
+            d_s3_mm = math.sqrt(M_Nmm/2 / (k_con * b_s3_mm * f_cd))  # Depth in mm
+
+            # Adjust width to maintain width-to-depth ratio
+            b_s3_mm = d_s3_mm * b_to_d_ratio  # Corresponding width in mm
+            b_s3_mm = max(column_size_mm*1000,b_s3_mm)
+            d_s3_mm = max(d_s3_mm,d_s2_mm)
+            d_s3_mm = round(d_s3_mm / 100) * 100 
+    
+    return int(b_s1_mm), int(d_s1_mm), int(b_s2_mm), int(d_s2_mm), int(b_s3_mm), int(d_s3_mm)
