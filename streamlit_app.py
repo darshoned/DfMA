@@ -99,14 +99,16 @@ if st.button("Generate"):
     from column_rc import calculate_column_size
     from beam_rc import calculate_beam_size
     from slab_rc import calculate_slab_thickness
+    from slab_rc import hcs_selected_slab_check
     from output_data import calculate_layout_outputs
     from plot_data import create_grid_plot
     
     column_size_mm, column_weight_tonnes = calculate_column_size(s1, s2, live_load,selected_column)
-    b_s1_mm, d_s1_mm, b_s2_mm, d_s2_mm = calculate_beam_size(s1, s2, live_load, column_size_mm, selected_beam)
+    selected_slab = hcs_selected_slab_check(s1, live_load, selected_slab)
+    b_s1_mm, d_s1_mm, b_s2_mm, d_s2_mm, b_s3_mm, d_s3_mm = calculate_beam_size(s1, s2, live_load, column_size_mm, selected_beam, selected_slab)
     slab_thickness_mm, slab_max_spacing_pt_mm, hcs_slab_thickness_mm = calculate_slab_thickness(s1, s2, live_load,selected_slab)
-    design_output, equipment_output, utility_output, manpower_output, beam_manhour, column_manhours, slab_manhours, casting_manhours = calculate_layout_outputs(s1, s2, live_load, column_size_mm, selected_column, selected_beam, selected_slab, length, width, b_s1_mm, d_s1_mm,b_s2_mm, d_s2_mm, slab_thickness_mm, slab_max_spacing_pt_mm, hcs_slab_thickness_mm) 
-    fig = create_grid_plot(length, width, s1, s2, live_load,selected_column, selected_beam, selected_slab, column_size_mm, column_weight_tonnes, b_s1_mm, d_s1_mm, b_s2_mm, d_s2_mm, slab_thickness_mm, slab_max_spacing_pt_mm, hcs_slab_thickness_mm)
+    misc_output, design_output, equipment_output, utility_output, manpower_output, beam_manhour, column_manhours, slab_manhours, casting_manhours = calculate_layout_outputs(s1, s2, live_load, column_size_mm, selected_column, selected_beam, selected_slab, length, width, b_s1_mm, d_s1_mm,b_s2_mm, d_s2_mm, b_s3_mm, d_s3_mm, slab_thickness_mm, slab_max_spacing_pt_mm, hcs_slab_thickness_mm) 
+    fig = create_grid_plot(length, width, s1, s2, live_load,selected_column, selected_beam, selected_slab, column_size_mm, column_weight_tonnes, b_s1_mm, d_s1_mm, b_s2_mm, d_s2_mm, b_s3_mm, d_s3_mm, slab_thickness_mm, slab_max_spacing_pt_mm, hcs_slab_thickness_mm)
     st.pyplot(fig)
     #st.write(beam_manhour)
     #st.write(column_manhours)
@@ -180,9 +182,52 @@ if st.button("Generate"):
         "Category": [
             "Total Mandays (Structure only)",
             "Total Productivity m2/manday(Structure only)",
-            "Total Productivity m2/manday(Total)",
+            "Floor cycle(days)",
+            "Unique Headcount",
         ],
         "Value": manpower_output
+    }
+    
+    miscellaneous_data = {
+    "Category": [
+        "Number of volumetric precast component(s)",
+        "Number of vertical precast component(s)",
+        "Number of propped horizontal component(s)",
+        "Number of unpropped horizontal component(s)",
+        "Formwork area for slab(s)",
+        "Formwork area for beam(s)",
+        "Number of column formwork(s)",
+        "Weight of loose rebar (tonnes)",
+        "Weight of slab rebar (tonnes)",
+        "CIS Volume(m3)",
+        "Number of tower crane(s)",
+        "Number of concrete pump(s)",
+        "Number of passenger/material hoist(s)",
+        "Number of construction hoist(s)",
+        "Number of Gondola(s)",
+        "Number of MEWP(s)",
+        "Hoist Count passenger/material hoist",
+        "Hoist Count Tower Crane",
+        "Number of concrete truck delivery(s)",
+        "Number of trailer delivery(s)",
+        "Beam manhours",
+        "Slab manhours",
+        "Column manhours",
+        "Casting manhours",
+        "Total Mandays (Structure only)",
+        "Total Productivity m2/manday (Structure only)",
+        "Slab CIS Volume (m³)",
+        "Beam CIS Volume (m³)",
+        "Column CIS Volume (m³)",
+        "Weight of beam rebar (tonnes)",
+        "Weight of column rebar (tonnes)",
+        "Weight of slab rebar (tonnes)",
+        "Weight of loose rebar (tonnes)",
+        "Beam Hoist Count (Tower Crane)",
+        "Slab Hoist Count (Tower Crane)",
+        "Column Hoist Count (Tower Crane)"
+    ],
+        "Value": misc_output
     }
 
 
@@ -195,11 +240,13 @@ if st.button("Generate"):
         html += "</tbody></table>"
         return html
 
+
     # Create DataFrames
     df_design = pd.DataFrame(design_data)
     df_equipment = pd.DataFrame(equipment_data)
     df_utility = pd.DataFrame(utility_data)
     df_manpower = pd.DataFrame(manpower_data)
+    df_misc = pd.DataFrame(miscellaneous_data)
 
     # Streamlit Layout
     st.title("Data Tables")
@@ -225,4 +272,10 @@ if st.button("Generate"):
     with col4:
         st.subheader("Manpower")
         st.markdown(create_html_table(df_manpower), unsafe_allow_html=True)
+        
+    # Streamlit Layout
+    st.title("Additional Miscellaneous Data")
 
+    # Display miscellaneous outputs
+    st.subheader("Miscellaneous Outputs")
+    st.markdown(create_html_table(df_misc), unsafe_allow_html=True)
