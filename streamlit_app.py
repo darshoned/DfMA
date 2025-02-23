@@ -91,6 +91,7 @@ s2 = st.number_input("Enter Beam Span S2 (may be adjusted based on chosen struct
 live_load = st.number_input("Enter Live Load (kN/m²):", min_value=0.0, max_value=20.0, step=0.1, value=3.0)
 lengthinput = st.number_input("Enter the building length (meters):", min_value=20, max_value=100, step=1, value=60)
 widthinput = st.number_input("Enter the building width (meters):", min_value=20, max_value=40, step=1, value=40)
+f2f = st.number_input("Enter the F2F Height (meters):", min_value=2, max_value=6, step=1, value=6)
 length = math.floor((lengthinput) / s1) * s1
 width = math.floor((widthinput) / s2) * s2
 
@@ -103,11 +104,11 @@ if st.button("Generate"):
     from output_data import calculate_layout_outputs
     from plot_data import create_grid_plot
     
-    column_size_mm, column_weight_tonnes = calculate_column_size(s1, s2, live_load,selected_column)
+    column_size_mm, column_weight_tonnes = calculate_column_size(s1, s2, live_load,selected_column, f2f)
     selected_slab = hcs_selected_slab_check(s1, live_load, selected_slab)
     b_s1_mm, d_s1_mm, b_s2_mm, d_s2_mm, b_s3_mm, d_s3_mm = calculate_beam_size(s1, s2, live_load, column_size_mm, selected_beam, selected_slab)
     slab_thickness_mm, slab_max_spacing_pt_mm, hcs_slab_thickness_mm = calculate_slab_thickness(s1, s2, live_load,selected_slab)
-    misc_output, design_output, equipment_output, utility_output, manpower_output, beam_manhour, column_manhours, slab_manhours, casting_manhours = calculate_layout_outputs(s1, s2, live_load, column_size_mm, selected_column, selected_beam, selected_slab, length, width, b_s1_mm, d_s1_mm,b_s2_mm, d_s2_mm, b_s3_mm, d_s3_mm, slab_thickness_mm, slab_max_spacing_pt_mm, hcs_slab_thickness_mm) 
+    misc_output, design_output, equipment_output, utility_output, manpower_output, beam_manhour, column_manhours, slab_manhours, casting_manhours = calculate_layout_outputs(s1, s2, live_load, column_size_mm, selected_column, selected_beam, selected_slab, length, width, b_s1_mm, d_s1_mm,b_s2_mm, d_s2_mm, b_s3_mm, d_s3_mm, slab_thickness_mm, slab_max_spacing_pt_mm, hcs_slab_thickness_mm, f2f) 
     fig = create_grid_plot(length, width, s1, s2, live_load,selected_column, selected_beam, selected_slab, column_size_mm, column_weight_tonnes, b_s1_mm, d_s1_mm, b_s2_mm, d_s2_mm, b_s3_mm, d_s3_mm, slab_thickness_mm, slab_max_spacing_pt_mm, hcs_slab_thickness_mm)
     st.pyplot(fig)
     #st.write(beam_manhour)
@@ -180,10 +181,9 @@ if st.button("Generate"):
     # Manpower Data
     manpower_data = {
         "Category": [
-            "Total Mandays (Structure only)",
-            "Total Productivity m2/manday(Structure only)",
+            "Expected Mandays (Structure only)",
             "Floor cycle(days)",
-            "Unique Headcount",
+            "Unique Headcount"
         ],
         "Value": manpower_output
     }
@@ -246,7 +246,7 @@ if st.button("Generate"):
     df_equipment = pd.DataFrame(equipment_data)
     df_utility = pd.DataFrame(utility_data)
     df_manpower = pd.DataFrame(manpower_data)
-    df_misc = pd.DataFrame(miscellaneous_data)
+    #df_misc = pd.DataFrame(miscellaneous_data)
 
     # Streamlit Layout
     st.title("Data Tables")
@@ -274,8 +274,15 @@ if st.button("Generate"):
         st.markdown(create_html_table(df_manpower), unsafe_allow_html=True)
         
     # Streamlit Layout
-    st.title("Additional Miscellaneous Data")
+    #st.title("Additional Miscellaneous Data")
 
     # Display miscellaneous outputs
-    st.subheader("Miscellaneous Outputs")
-    st.markdown(create_html_table(df_misc), unsafe_allow_html=True)
+    #st.subheader("Miscellaneous Outputs")
+    #st.markdown(create_html_table(df_misc), unsafe_allow_html=True)
+
+
+
+
+
+
+
