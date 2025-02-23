@@ -1,6 +1,6 @@
 import math
 
-def calculate_column_size(s1, s2, live_load,selected_column):
+def calculate_column_size(s1, s2, live_load,selected_column, f2f):
     """
     Calculate the required column size for a 5-storey building with realistic outputs.
     """
@@ -11,7 +11,7 @@ def calculate_column_size(s1, s2, live_load,selected_column):
     f_cd = 30 / gamma_c  # Design compressive strength of concrete (C40)
     f_yd = 500 / gamma_s  # Design yield strength of steel (B500)
     reinforcement_ratio = 0.02  # Reinforcement ratio (2%)
-    storey_height = 6 #6m f2f
+    storey_height = f2f #6m f2f
 
     # Axial resistance
     f_cc = alpha * f_cd
