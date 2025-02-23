@@ -1,8 +1,8 @@
 import math
 import pandas as pd
 
-def calculate_layout_outputs(s1, s2, live_load, column_size_mm, selected_column, selected_beam, selected_slab, length, width, b_s1_mm, d_s1_mm,b_s2_mm, d_s2_mm, b_s3_mm, d_s3_mm,slab_thickness_mm, slab_max_spacing_pt_mm, hcs_slab_thickness_mm):
-    building_height = 6
+def calculate_layout_outputs(s1, s2, live_load, column_size_mm, selected_column, selected_beam, selected_slab, length, width, b_s1_mm, d_s1_mm,b_s2_mm, d_s2_mm, b_s3_mm, d_s3_mm,slab_thickness_mm, slab_max_spacing_pt_mm, hcs_slab_thickness_mm, f2f):
+    building_height = f2f
     
 
     # Initialize all return-related variables to default values
@@ -155,7 +155,7 @@ def calculate_layout_outputs(s1, s2, live_load, column_size_mm, selected_column,
         topping_area_slabs = length * width - (formwork_area_beams / 2)
         formwork_area_slabs = 0
         slab_rebar_percentage = 1.5
-        weight_slab_rebar = math.ceil((formwork_area_slabs * slab_thickness_m) * 7.85 * slab_rebar_percentage/100)
+        weight_slab_rebar = math.ceil((topping_area_slabs * slab_thickness_m) * 7.85 * slab_rebar_percentage/100)
         slab_cis_volume = topping_area_slabs * slab_thickness_m
         
         # Calculate the number of x positions
@@ -178,7 +178,7 @@ def calculate_layout_outputs(s1, s2, live_load, column_size_mm, selected_column,
         topping_area_slabs = length * width - (formwork_area_beams / 2)
         formwork_area_slabs = 0
         slab_rebar_percentage = 1.5
-        weight_slab_rebar = math.ceil((formwork_area_slabs * slab_thickness_m) * 7.85 * slab_rebar_percentage/100)
+        weight_slab_rebar = math.ceil((topping_area_slabs * slab_thickness_m) * 7.85 * slab_rebar_percentage/100)
         slab_cis_volume = topping_area_slabs * slab_thickness_m
         
         # Calculate the number of x positions
@@ -201,7 +201,7 @@ def calculate_layout_outputs(s1, s2, live_load, column_size_mm, selected_column,
         topping_area_slabs = length * width - (formwork_area_beams / 2)
         formwork_area_slabs = 0
         slab_rebar_percentage = 1.5
-        weight_slab_rebar = math.ceil((formwork_area_slabs * slab_thickness_m) * 7.85 * slab_rebar_percentage/100)
+        weight_slab_rebar = math.ceil((topping_area_slabs * slab_thickness_m) * 7.85 * slab_rebar_percentage/100)
         slab_cis_volume = topping_area_slabs * slab_thickness_m
         
         # Calculate the number of x positions
@@ -246,7 +246,7 @@ def calculate_layout_outputs(s1, s2, live_load, column_size_mm, selected_column,
         topping_area_slabs = length * width - (formwork_area_beams / 2)
         formwork_area_slabs = 0
         slab_rebar_percentage = 1.5
-        weight_slab_rebar = math.ceil((formwork_area_slabs * slab_thickness_m) * 7.85 * slab_rebar_percentage/100)
+        weight_slab_rebar = math.ceil((topping_area_slabs * slab_thickness_m) * 7.85 * slab_rebar_percentage/100)
         slab_cis_volume = topping_area_slabs * slab_thickness_m
         
         # Calculate the number of x positions
@@ -339,7 +339,6 @@ def calculate_layout_outputs(s1, s2, live_load, column_size_mm, selected_column,
     # Manpower Outputs
     manpower_output = [
     round(total_mandays_crane),
-    round(total_productivity_crane,3),
     round(1.3*0.6*hoist_count_tower_crane/no_tower_cranes/8,2), #1.3 weather, /8 for manhours, 0.6 meaning 40minutes a hoist
     round(total_mandays_crane/(1.3*hoist_count_tower_crane*0.8/no_tower_cranes/8))
     ]
